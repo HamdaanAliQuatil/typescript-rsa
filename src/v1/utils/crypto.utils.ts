@@ -1,6 +1,14 @@
 import crypto from 'crypto';
 import bigInt from 'big-integer';
 
+interface RSAKeyPair {
+    publicKey: {
+        e: bigint;
+        n: bigint;
+    }
+    privateKey?: bigInt.BigInteger;
+}
+
 function powerMod(base: bigint, exp: bigint, mod: bigint): bigint {
     let result = BigInt(1);
     base = base % mod;
@@ -60,6 +68,15 @@ function generatePrime(bitLength: number): bigint {
     }
 }
 
+function coprime(a: bigint, b: bigint): boolean {
+    while (b != 0n) {
+        const t = b;
+        b = a % b;
+        a = t;
+    }
+    return a == 1n;
+}
+
 function bufferToBigInt(buffer: ArrayBuffer): bigint {
     let hexString = '';
     const view = new DataView(buffer);
@@ -70,28 +87,4 @@ function bufferToBigInt(buffer: ArrayBuffer): bigint {
     return BigInt(`0x${hexString}`);
 }
 
-
-export function rsa() {
-    // Generate two distinct primes
-    const p = generatePrime(32);
-    const q = generatePrime(32);
-
-    // Convert the primes to BigInts
-//     const bigintP = bufferToBigInt(p);
-//     const bigintQ = bufferToBigInt(q);
-
-    if (p === q) {
-        throw new Error(`p and q must be different`);
-    }
-
-    // const n = new TextDecoder().decode(p * q);
-    const n = p * q;
-
-    console.log(n);
- 
-//     // Issue: n is Infinity. Cannnot be used for calucations
-
-    return p;
-}
-
-rsa();
+export { RSAKeyPair, generatePrime, coprime, bufferToBigInt }

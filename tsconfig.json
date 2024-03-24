@@ -9,7 +9,7 @@
     "moduleResolution": "NodeNext",
     "baseUrl": ".",
     "paths": {
-      "@boost/*": ["src/*"]
+      "@rsa-elgamal/*": ["src/*"]
     },
     "allowJs": true,
     "outDir": "dist",

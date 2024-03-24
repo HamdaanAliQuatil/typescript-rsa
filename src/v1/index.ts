@@ -1,9 +1,5 @@
 import express, { Response, Request } from 'express';
-import { hmacDigest, shareKeys } from '@boost/v1/controllers/verification.controller';
-import { KeyPair, generateSharedSecret } from '@boost/v1/utils/crypto.utils';
-import { DiffieHellman } from 'crypto';
-import axios from 'axios';
-import { sendAAPublicKey, verifyData } from '@boost/v1/controllers/aa.controller';
+
 
 const appBoost = express();
 const appAA = express();
@@ -14,26 +10,26 @@ let boostPublicKey: Buffer, boostPrivateKey: Buffer;
 let boostGenerator: Buffer, boostPrime: Buffer;
 let sharedSecret: Buffer;
 let AAPublicKey: Buffer;
-let boostKeyPair: KeyPair, boostDiffeHellman: DiffieHellman;
+
 
 appBoost.get('/init', async (req: Request, res: Response) => {
-    ({ boostPublicKey, boostPrivateKey, boostGenerator, boostPrime, boostDiffeHellman } = shareKeys());
-    res.send({ boostPublicKey, boostGenerator, boostPrime });
+    // ({ boostPublicKey, boostPrivateKey, boostGenerator, boostPrime, boostDiffeHellman } = shareKeys());
+    // res.send({ boostPublicKey, boostGenerator, boostPrime });
 });
 
 appAA.get('/fetchAAPublicKey', async (req: Request, res: Response) => {
-    AAPublicKey = await sendAAPublicKey();
-    res.send({ AAPublicKey: AAPublicKey.toString('hex') });
+    // AAPublicKey = await sendAAPublicKey();
+    // res.send({ AAPublicKey: AAPublicKey.toString('hex') });
 
-    boostKeyPair = {
-        publicKey: boostPublicKey,
-        privateKey: boostPrivateKey,
-        generator: boostGenerator,
-        prime: boostPrime,
-        diffieHellman: boostDiffeHellman
-    }
+    // boostKeyPair = {
+    //     publicKey: boostPublicKey,
+    //     privateKey: boostPrivateKey,
+    //     generator: boostGenerator,
+    //     prime: boostPrime,
+    //     diffieHellman: boostDiffeHellman
+    // }
 
-    sharedSecret = generateSharedSecret(boostKeyPair, AAPublicKey);
+    // sharedSecret = generateSharedSecret(boostKeyPair, AAPublicKey);
 });
 
 const data = {
@@ -42,15 +38,15 @@ const data = {
 };
 
 appBoost.get('/fetchData', async (req: Request, res: Response) => {
-    const hmac = hmacDigest(data, sharedSecret);
-    res.send({ data, hmac });
+    // const hmac = hmacDigest(data, sharedSecret);
+    // res.send({ data, hmac });
 });
 
 appAA.get('/verifyData', async (req: Request, res: Response) => {
-    const resp = await axios.get('http://localhost:3000/fetchData');
-    const { data, hmac } = resp.data;
-    const verified = await verifyData(data, hmac);
-    res.send({ verified });
+    // const resp = await axios.get('http://localhost:3000/fetchData');
+    // const { data, hmac } = resp.data;
+    // const verified = await verifyData(data, hmac);
+    // res.send({ verified });
 });
 
 
