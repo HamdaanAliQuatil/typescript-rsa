@@ -1,48 +1,47 @@
 import express, { Response, Request } from 'express';
+import { fetchAliceDecryptedData, fetchAliceEncryptedData, fetchAlicePublicKey, keyPublic } from '@rsa-elgamal/v1/controllers/alice.controller';
+import axios from 'axios';
 
+const alice = express();
+const bob = express();
 
-const appBoost = express();
-const appAA = express();
-const PORT_BOOST = 3000;
-const PORT_AA = 3001;
+const PORT_ALICE = 3000;
+const PORT_BOB = 3001;
 
-let boostPublicKey: Buffer, boostPrivateKey: Buffer;
-let boostGenerator: Buffer, boostPrime: Buffer;
-let sharedSecret: Buffer;
-let AAPublicKey: Buffer;
+let alicePublicKey: keyPublic;
 
-
-appBoost.get('/init', async (req: Request, res: Response) => {
-    // ({ boostPublicKey, boostPrivateKey, boostGenerator, boostPrime, boostDiffeHellman } = shareKeys());
-    // res.send({ boostPublicKey, boostGenerator, boostPrime });
+alice.get('/init', async (req: Request, res: Response) => {
+    alicePublicKey = await fetchAlicePublicKey();
+    res.send({ alicePublicKey });
 });
 
-appAA.get('/fetchAAPublicKey', async (req: Request, res: Response) => {
-    // AAPublicKey = await sendAAPublicKey();
-    // res.send({ AAPublicKey: AAPublicKey.toString('hex') });
-
-    // boostKeyPair = {
-    //     publicKey: boostPublicKey,
-    //     privateKey: boostPrivateKey,
-    //     generator: boostGenerator,
-    //     prime: boostPrime,
-    //     diffieHellman: boostDiffeHellman
-    // }
-
-    // sharedSecret = generateSharedSecret(boostKeyPair, AAPublicKey);
+alice.get('/encryptData', async (req: Request, res: Response) => {
+    const encryptedData = await fetchAliceEncryptedData();
+    res.send({ encryptedData });
 });
 
-const data = {
-    name: 'Boost User 1',
-    ssn: 'WSDFS561324'
-};
+bob.get('/decryptData', async (req: Request, res: Response) => {
+    const { encryptedData } = req.query;
+    const decryptedData = await fetchAliceDecryptedData(encryptedData as string);
+    res.send({ decryptedData });
+});
 
-appBoost.get('/fetchData', async (req: Request, res: Response) => {
+bob.get('/all', async (req: Request, res: Response) => {
+    const resp = await axios.get('http://localhost:3000/init');
+    const { alicePublicKey } = resp.data;
+    const resp2 = await axios.get('http://localhost:3000/encryptData');
+    const { encryptedData } = resp2.data;
+    const resp3 = await axios.get(`http://localhost:3001/decryptData?encryptedData=${encryptedData}`);
+    const { decryptedData } = resp3.data;
+    res.send({ alicePublicKey, encryptedData, decryptedData });
+});
+
+alice.get('/fetchData', async (req: Request, res: Response) => {
     // const hmac = hmacDigest(data, sharedSecret);
     // res.send({ data, hmac });
 });
 
-appAA.get('/verifyData', async (req: Request, res: Response) => {
+bob.get('/verifyData', async (req: Request, res: Response) => {
     // const resp = await axios.get('http://localhost:3000/fetchData');
     // const { data, hmac } = resp.data;
     // const verified = await verifyData(data, hmac);
@@ -50,10 +49,10 @@ appAA.get('/verifyData', async (req: Request, res: Response) => {
 });
 
 
-appBoost.listen(PORT_BOOST, () => {
-    console.log(`Boost server is running on port ${PORT_BOOST}`);
+alice.listen(PORT_ALICE, () => {
+    console.log(`Boost server is running on port ${PORT_ALICE}`);
 });
 
-appAA.listen(PORT_AA, () => {
-    console.log(`AA server is running on port ${PORT_AA}`);
+bob.listen(PORT_BOB, () => {
+    console.log(`AA server is running on port ${PORT_BOB}`);
 });

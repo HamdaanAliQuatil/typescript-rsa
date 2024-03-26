@@ -1,5 +1,5 @@
-import { RSAKeyPair, generatePrime, coprime, bufferToBigInt } from '@rsa-elgamal/v1/utils/crypto.utils'
-import bigInt from 'big-integer';
+import { RSAKeyPair, generatePrime, coprime, bufferToBigInt, powerMod, modInv } from '@rsa-elgamal/v1/utils/crypto.utils'
+// import BigInt from 'big-integer';
 
 export function rsa(): RSAKeyPair {
     // Generate two distinct primes
@@ -23,12 +23,11 @@ export function rsa(): RSAKeyPair {
     }
 
     // console.log(`e: ${e} and phi: ${phi} are coprime`);
-
+    
     // Calculate d
-    const d = bigInt(e).modInv(phi);
-
-    // console.log(`Public key: (${e}, ${n})`);
-    // console.log(`Private key: (${d}`);
+    const d = modInv(e, phi);
+    
+    // console.log(`p: ${p}, q: ${q}, n: ${n}, phi: ${phi}, e: ${e} and d: ${d}`);
 
     return {
         publicKey: {
@@ -38,3 +37,28 @@ export function rsa(): RSAKeyPair {
         privateKey: d
     };
 }
+
+export function encrypt(data: string, publicKey: RSAKeyPair['publicKey']): any {
+    const n = publicKey.n;
+    const e = publicKey.e;
+    
+    let dataBigInt =  BigInt(data);
+    console.log(dataBigInt);
+    
+    const encryptedData = powerMod(dataBigInt, e, n);
+
+    return encryptedData;
+}
+
+export function decrypt(encryptedData: bigint, privateKey: RSAKeyPair['privateKey'], publicKey: RSAKeyPair['publicKey']): bigint {
+    const n = publicKey.n;
+    const d = privateKey;
+
+    const decryptedData = powerMod(encryptedData, d, n);
+    console.log(`decryptedData: ${decryptedData}`);
+    let decryptedDataStr = decryptedData.toString(2);
+    console.log(decryptedDataStr);
+
+    return decryptedData;
+}
+

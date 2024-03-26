@@ -6,7 +6,7 @@ interface RSAKeyPair {
         e: bigint;
         n: bigint;
     }
-    privateKey?: bigInt.BigInteger;
+    privateKey: bigint;
 }
 
 function powerMod(base: bigint, exp: bigint, mod: bigint): bigint {
@@ -77,14 +77,35 @@ function coprime(a: bigint, b: bigint): boolean {
     return a == 1n;
 }
 
-function bufferToBigInt(buffer: ArrayBuffer): bigint {
-    let hexString = '';
-    const view = new DataView(buffer);
-    for (let i = 0; i < buffer.byteLength; i++) {
-        hexString += view.getUint8(i).toString(16).padStart(2, '0');
-    }
-
-    return BigInt(`0x${hexString}`);
+function bufferToBigInt(buffer: any, start = 0, end = buffer.length) {
+    const bufferAsHexString = buffer.slice(start, end).toString("hex");
+    return BigInt(`0x${bufferAsHexString}`);
 }
 
-export { RSAKeyPair, generatePrime, coprime, bufferToBigInt }
+function modInv(a: bigint, m: bigint): bigint {
+    const m0 = m;
+    let x0 = 0n;
+    let x1 = 1n;
+
+    if (m == 1n)
+        return 0n;
+
+    while (a > 1n) {
+        const q = a / m;
+        let t = m;
+
+        m = a % m;
+        a = t;
+        t = x0;
+        x0 = x1 - q * x0;
+        x1 = t;
+    }
+
+    if (x1 < 0n)
+        x1 += m0;
+
+    return x1;
+}
+
+
+export { RSAKeyPair, generatePrime, coprime, bufferToBigInt, powerMod, millerRabinTest, isProbablePrime, modInv}
