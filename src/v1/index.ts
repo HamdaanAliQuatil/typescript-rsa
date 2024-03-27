@@ -1,6 +1,7 @@
 import express, { Response, Request } from 'express';
-import { fetchAliceDecryptedData, fetchAliceEncryptedData, fetchAlicePublicKey, keyPublic } from '@rsa-elgamal/v1/controllers/alice.controller';
+import { elgamalDecryption, elgamalEncryption, fetchAliceDecryptedData, fetchAliceEncryptedData, fetchAlicePublicKey, keyPublic } from '@rsa-elgamal/v1/controllers/alice.controller';
 import axios from 'axios';
+import { decrypt } from './utils/rsa.utils';
 
 const alice = express();
 const bob = express();
@@ -23,31 +24,44 @@ alice.get('/encryptData', async (req: Request, res: Response) => {
 bob.get('/decryptData', async (req: Request, res: Response) => {
     const { encryptedData } = req.query;
     const decryptedData = await fetchAliceDecryptedData(encryptedData as string);
-    res.send({ decryptedData });
+    const decryptedDataStr = decryptedData.toString();
+    console.log({ decryptedDataStr });
+    res.send({ decryptedDataStr });
 });
 
 bob.get('/all', async (req: Request, res: Response) => {
-    const resp = await axios.get('http://localhost:3000/init');
-    const { alicePublicKey } = resp.data;
-    const resp2 = await axios.get('http://localhost:3000/encryptData');
-    const { encryptedData } = resp2.data;
-    const resp3 = await axios.get(`http://localhost:3001/decryptData?encryptedData=${encryptedData}`);
-    const { decryptedData } = resp3.data;
-    res.send({ alicePublicKey, encryptedData, decryptedData });
+    try {
+        const [initResp, encryptResp] = await Promise.all([
+            axios.get('http://localhost:3000/init'),
+            axios.get('http://localhost:3000/encryptData')
+        ]);
+
+        const { alicePublicKey } = initResp.data;
+        const { encryptedData } = encryptResp.data;
+
+        const decryptResp = await axios.get(`http://localhost:3001/decryptData?encryptedData=${encryptedData}`);
+        const { decryptedDataStr } = decryptResp.data;
+
+        console.log({ decryptedDataStr });
+        res.send({ alicePublicKey, encryptedData, decryptedDataStr });
+    } catch (error) {
+        res.status(500).send({ error: 'An error occurred' });
+    }
 });
 
-alice.get('/fetchData', async (req: Request, res: Response) => {
-    // const hmac = hmacDigest(data, sharedSecret);
-    // res.send({ data, hmac });
+
+alice.get('/encryptElgamal', async (req: Request, res: Response) => {
+    const { data } = req.query;
+    const encryptedData = await elgamalEncryption(23, 5, Number(data));
+    res.send({ encryptedData });
 });
 
-bob.get('/verifyData', async (req: Request, res: Response) => {
-    // const resp = await axios.get('http://localhost:3000/fetchData');
-    // const { data, hmac } = resp.data;
-    // const verified = await verifyData(data, hmac);
-    // res.send({ verified });
+bob.get('/decryptElgamal', async (req: Request, res: Response) => {
+    const { data } = req.query;
+    const stringData = data as string;
+    const decryptedData = await elgamalDecryption(23, stringData);
+    res.send({ decryptedData });
 });
-
 
 alice.listen(PORT_ALICE, () => {
     console.log(`Boost server is running on port ${PORT_ALICE}`);
